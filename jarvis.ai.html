@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Jarvis Self Learning AI</title>
+
+<style>
+body{background:black;color:white;font-family:Arial;margin:0;}
+#chat{height:65vh;overflow:auto;padding:10px;}
+textarea{width:100%;height:120px;background:#222;color:white;font-size:16px;}
+button{width:25%;padding:15px;background:#007acc;color:white;border:none;}
+.user{color:lime;margin:5px;}
+.ai{color:cyan;margin:5px;}
+</style>
+
+</head>
+
+<body>
+
+<h2 align="center">🧠 Jarvis AI Upgrade System</h2>
+
+<div id="chat"></div>
+
+<textarea id="input" placeholder="Train OR Update AI..."></textarea>
+
+<div>
+<button onclick="send()">Send</button>
+<button onclick="copyText()">Copy</button>
+<button onclick="pasteText()">Paste</button>
+<button onclick="exportBackup()">Backup</button>
+</div>
+
+<script>
+
+// ================= STORAGE =================
+let db = JSON.parse(localStorage.getItem("jarvis_db") || `{
+"version":"1.0",
+"memory":{},
+"rules":{}
+}`);
+
+function saveDB(){
+localStorage.setItem("jarvis_db", JSON.stringify(db));
+}
+
+// ================= UI =================
+function addUser(t){
+chat.innerHTML += `<div class='user'>You: ${t}</div>`;
+chat.scrollTop=chat.scrollHeight;
+}
+
+function addAI(t){
+chat.innerHTML += `<div class='ai'>Jarvis: ${t}</div>`;
+chat.scrollTop=chat.scrollHeight;
+}
+
+let chat=document.getElementById("chat");
+
+// ================= AI ENGINE =================
+function aiThink(text){
+
+text=text.toLowerCase().trim();
+
+// ===== BULK TRAIN =====
+if(text.includes("train:")){
+let lines=text.split("\n");
+let count=0;
+
+lines.forEach(line=>{
+if(line.startsWith("train:")){
+try{
+let [q,a]=line.replace("train:","").split("|");
+db.memory[q.trim()]=a.trim();
+count++;
+}catch{}
+}
+});
+
+saveDB();
+return `✅ Training Complete (${count})`;
+}
+
+// ===== UPDATE AI SYSTEM =====
+if(text.startsWith("update ai")){
+try{
+
+let json=text.replace("update ai","").trim();
+let newData=JSON.parse(json);
+
+// VERSION UPDATE
+if(newData.version) db.version=newData.version;
+
+// RULE UPDATE
+if(newData.rules){
+db.rules={...db.rules,...newData.rules};
+}
+
+// MEMORY UPDATE
+if(newData.memory){
+db.memory={...db.memory,...newData.memory};
+}
+
+saveDB();
+return "🚀 AI Upgraded Successfully";
+
+}catch{
+return "❌ Update Format Wrong";
+}
+}
+
+// ===== VERSION CHECK =====
+if(text=="version") return "AI Version: "+db.version;
+
+// ===== RULE CHECK =====
+if(db.rules[text]) return db.rules[text];
+
+// ===== MEMORY CHECK =====
+if(db.memory[text]) return db.memory[text];
+
+// ===== DEFAULT =====
+return "🤖 Train ya Update karo mujhe";
+}
+
+// ================= BUTTONS =================
+function send(){
+let input=document.getElementById("input");
+let msg=input.value.trim();
+if(!msg) return;
+
+addUser(msg);
+addAI(aiThink(msg));
+input.value="";
+}
+
+function copyText(){
+let t=document.getElementById("input");
+t.select();
+document.execCommand("copy");
+}
+
+function pasteText(){
+navigator.clipboard.readText().then(t=>{
+document.getElementById("input").value=t;
+});
+}
+
+function exportBackup(){
+let blob=new Blob([JSON.stringify(db,null,2)],{type:"application/json"});
+let a=document.createElement("a");
+a.href=URL.createObjectURL(blob);
+a.download="jarvis_backup.json";
+a.click();
+}
+
+addAI("🤖 Jarvis Ready");
+
+</script>
+
+</body>
+</html>
